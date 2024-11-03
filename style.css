@@ -39,8 +39,12 @@ body {
 
 /* === Typography === */
 
-h1 {
+h1, h2 {
   margin: 0;
+}
+
+h2 {
+  font-weight: 500;
 }
 
 .app-title {

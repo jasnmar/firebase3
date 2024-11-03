@@ -41,6 +41,7 @@ const createAccountButtonEl = document.getElementById("create-account-btn")
 const signOutButtonEl = document.getElementById("sign-out-btn")
 
 const userProfilePictureEl = document.getElementById("user-profile-picture")
+const userGreetingEl = document.getElementById("user-greeting")
 
 /* == UI - Event Listeners == */
 
@@ -57,6 +58,7 @@ onAuthStateChanged(auth, (user) => {
   if (user) {
     showLoggedInView()
     showProfilePicture(userProfilePictureEl, user)
+    showUserGreeting(userGreetingEl, user)
     const uid = user.uid
   } else {
     showLoggedOutView()
@@ -181,18 +183,33 @@ function showProfilePicture(imgElement, user) {
   } else {
     console.error("No user provided")
   }
+}
+
+function showUserGreeting(element, user) {
+  let firstName = "friend"
+  if(user) {
+    const displayName = user.displayName
+    if(displayName) {
+      const fName = displayName.split(" ")
+      firstName = fName[0]
+    }
+  }
+  element.textContent = `Hey ${firstName}, how are you?`
   /*  Challenge:
       Use the documentation to make this function work.
       
-      This function has two parameters: imgElement and user
+      This function has two parameters: element and user
       
       We will call this function inside of onAuthStateChanged when the user is logged in.
       
       The function will be called with the following arguments:
-      showProfilePicture(userProfilePictureEl, user)
+      showUserGreeting(userGreetingEl, user)
       
-      If the user has a profile picture URL, set the src of imgElement to that URL.
+      If the user has a display name, then set the textContent of element to:
+      "Hey John, how are you?"
+      Where John is replaced with the actual first name of the user
       
-      Otherwise, you should set the src of imgElement to "assets/images/default-profile-picture.jpeg"
+      Otherwise, set the textContent of element to:
+      "Hey friend, how are you?" 
   */
 }
