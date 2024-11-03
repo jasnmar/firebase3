@@ -5,7 +5,8 @@ import {
   createUserWithEmailAndPassword,
   sendEmailVerification, 
   signInWithEmailAndPassword,
-  signOut 
+  signOut,
+  onAuthStateChanged
 } from "firebase/auth"
 
 const firebaseConfig = {
@@ -47,7 +48,28 @@ signOutButtonEl.addEventListener("click", authSignOut)
 
 /* === Main Code === */
 
-showLoggedOutView()
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    showLoggedInView()
+    const uid = user.uid
+    // ...
+  } else {
+    showLoggedOutView()
+  }
+})
+
+
+/*  Challenge:
+    Import the onAuthStateChanged function from 'firebase/auth'
+
+	Use the code from the documentaion to make this work.
+    
+    Use onAuthStateChanged to:
+    
+    Show the logged in view when the user is logged in using showLoggedInView()
+    
+    Show the logged out view when the user is logged out using showLoggedOutView()
+*/
 
 /* === Functions === */
 
