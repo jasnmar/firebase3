@@ -40,6 +40,8 @@ const createAccountButtonEl = document.getElementById("create-account-btn")
 
 const signOutButtonEl = document.getElementById("sign-out-btn")
 
+const userProfilePictureEl = document.getElementById("user-profile-picture")
+
 /* == UI - Event Listeners == */
 
 signInWithGoogleButtonEl.addEventListener("click", authSignInWithGoogle)
@@ -54,6 +56,7 @@ signOutButtonEl.addEventListener("click", authSignOut)
 onAuthStateChanged(auth, (user) => {
   if (user) {
     showLoggedInView()
+    showProfilePicture(userProfilePictureEl, user)
     const uid = user.uid
   } else {
     showLoggedOutView()
@@ -85,14 +88,6 @@ async function authSignInWithGoogle() {
     const credential = GoogleAuthProvider.credentialFromError(error)
     console.error(errorCode, errorMessage)
   }
-  /*  Challenge:
-		Import the signInWithPopup function from 'firebase/auth'
-
-        Use the code from the documentaion to make this function work.
-       
-        If the login is successful then you should console log "Signed in with Google"
-        If something went wrong, then you should log the error message using console.error.
-    */
 }
 
 async function authSignInWithEmail() {
@@ -173,4 +168,31 @@ function clearInputField(field) {
 function clearAuthFields() {
   clearInputField(emailInputEl)
   clearInputField(passwordInputEl)
+}
+
+function showProfilePicture(imgElement, user) {
+  if(user) {
+    const photoURL = user.photoURL
+    if(photoURL) {
+      imgElement.src = photoURL
+    } else {
+      imgElement.src = "assets/images/default-profile-picture.jpeg"
+    } 
+  } else {
+    console.error("No user provided")
+  }
+  /*  Challenge:
+      Use the documentation to make this function work.
+      
+      This function has two parameters: imgElement and user
+      
+      We will call this function inside of onAuthStateChanged when the user is logged in.
+      
+      The function will be called with the following arguments:
+      showProfilePicture(userProfilePictureEl, user)
+      
+      If the user has a profile picture URL, set the src of imgElement to that URL.
+      
+      Otherwise, you should set the src of imgElement to "assets/images/default-profile-picture.jpeg"
+  */
 }
