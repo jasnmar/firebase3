@@ -52,24 +52,10 @@ onAuthStateChanged(auth, (user) => {
   if (user) {
     showLoggedInView()
     const uid = user.uid
-    // ...
   } else {
     showLoggedOutView()
   }
 })
-
-
-/*  Challenge:
-    Import the onAuthStateChanged function from 'firebase/auth'
-
-	Use the code from the documentaion to make this work.
-    
-    Use onAuthStateChanged to:
-    
-    Show the logged in view when the user is logged in using showLoggedInView()
-    
-    Show the logged out view when the user is logged out using showLoggedOutView()
-*/
 
 /* === Functions === */
 
@@ -88,7 +74,6 @@ async function authSignInWithEmail() {
     const user = userCredential.user
     if(user) {
       clearAuthFields()
-      showLoggedInView()
     }
   } catch (error) {
     const errorCode = error.code
@@ -113,9 +98,6 @@ async function authCreateAccountWithEmail() {
       const errorMessage = error.message;
       console.error(errorCode, errorMessage)
     }
-    if(user) {
-      showLoggedInView()
-    }
   } catch (error) {
     const errorCode = error.code;
     const errorMessage = error.message;
@@ -126,7 +108,6 @@ async function authCreateAccountWithEmail() {
 async function authSignOut() {
       try {
         const signOutVar = await signOut(auth)
-        showLoggedOutView()
         clearAuthFields()
       } catch (error) {
         const errorCode = error.code;
