@@ -8,8 +8,14 @@ import {
   signOut,
   onAuthStateChanged,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  updateProfile
 } from "firebase/auth"
+import { 
+  getFirestore,
+  collection,
+  addDoc
+ } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCJwrc6CKnA4HqFrWbG5eIf4186JgeMg7w",
@@ -23,6 +29,8 @@ console.log('app: ', app)
 const auth = getAuth(app);
 console.log('auth: ', auth)
 const provider =  new GoogleAuthProvider()
+const db = getFirestore(app)
+console.log(db)
 /* === UI === */
 
 /* == UI - Elements == */
@@ -43,6 +51,13 @@ const signOutButtonEl = document.getElementById("sign-out-btn")
 const userProfilePictureEl = document.getElementById("user-profile-picture")
 const userGreetingEl = document.getElementById("user-greeting")
 
+const displayNameInputEl = document.getElementById("display-name-input")
+const photoURLInputEl = document.getElementById("photo-url-input")
+const updateProfileButtonEl = document.getElementById("update-profile-btn")
+
+const textareaEl = document.getElementById("post-input")
+const postButtonEl = document.getElementById("post-button")
+
 /* == UI - Event Listeners == */
 
 signInWithGoogleButtonEl.addEventListener("click", authSignInWithGoogle)
@@ -51,6 +66,10 @@ signInButtonEl.addEventListener("click", authSignInWithEmail)
 createAccountButtonEl.addEventListener("click", authCreateAccountWithEmail)
 
 signOutButtonEl.addEventListener("click", authSignOut)
+
+updateProfileButtonEl.addEventListener("click", authUpdateProfile)
+
+postButtonEl.addEventListener("click", postButtonPressed)
 
 /* === Main Code === */
 
@@ -143,7 +162,59 @@ async function authSignOut() {
       }
 }
 
+async function authUpdateProfile() {
+  const newDisplayName = displayNameInputEl.value
+  const newPhotoURL = photoURLInputEl.value
+  try {
+    await updateProfile(auth.currentUser, {
+      displayName: newDisplayName, photoURL: newPhotoURL
+    })
+    console.log("Profile updated")
+  } catch (error) {
+    const errorCode = error.code;
+    const errorMessage = error.message;
+    console.error(errorCode, errorMessage)
+  }
+}
+
+async function addPostToDB(postBody) {
+  try {
+    const docRef = await addDoc(collection(db, "posts"), {
+      body: postBody
+    })
+    console.log('docRef.id: ', docRef.id)
+  } catch (error) {
+    console.error("Error adding document: ", error)
+    
+  }
+      /*  Challenge:
+		Import collection and addDoc from 'firebase/firestore'
+
+    Use the code from the documentaion to make this function work.
+        
+    The function should add a new document to the "posts" collection in Firestore.
+        
+        The document should contain a field called 'body' of type "string" with a value of
+        postBody (from function parameter)
+        
+        If the document was written successfully, then console log
+        "Document written with ID: {documentID}"
+        Where documentID is the actual ID of the newly created document.
+        
+        If something went wrong, then you should log the error message using console.error
+    */
+}
+
 /* == Functions - UI Functions == */
+
+function postButtonPressed() {
+  const postBody = textareaEl.value
+  if(postBody) {
+    addPostToDB(postBody)
+    clearInputField(textareaEl)
+  }
+}
+
 
 function showLoggedOutView() {
   hideView(viewLoggedIn)
@@ -195,21 +266,4 @@ function showUserGreeting(element, user) {
     }
   }
   element.textContent = `Hey ${firstName}, how are you?`
-  /*  Challenge:
-      Use the documentation to make this function work.
-      
-      This function has two parameters: element and user
-      
-      We will call this function inside of onAuthStateChanged when the user is logged in.
-      
-      The function will be called with the following arguments:
-      showUserGreeting(userGreetingEl, user)
-      
-      If the user has a display name, then set the textContent of element to:
-      "Hey John, how are you?"
-      Where John is replaced with the actual first name of the user
-      
-      Otherwise, set the textContent of element to:
-      "Hey friend, how are you?" 
-  */
 }

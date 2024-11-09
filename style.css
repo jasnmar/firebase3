@@ -81,6 +81,14 @@ section {
   border: var(--border-width) solid var(--dark-color);
 }
 
+/* === Post Section */
+
+.post-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+
 /* === Nav === */
 
 nav {
@@ -107,29 +115,49 @@ nav {
 .app-container {
   display: flex;
   flex-direction: column;
-  gap: 3em;
+  gap: 2em;
 }
 
 /* === Common for elements === */
 
 input,
-button {
+button,
+textarea {
   font-family: inherit;
   padding: var(--element-padding);
   border-radius: var(--element-border-radius);
   width: 100%;
   box-sizing: border-box;
+
+}
+
+input,
+button {
   font-size: 1.1em;
   text-align: center;
   border: var(--border-width) solid var(--dark-color);
 }
 
 input:focus,
-button:focus {
+button:focus,
+textarea:focus {
   outline: none;
 }
 
 /* === Input fields === */
+
+textarea {
+  font-size: 1em;
+  border: 0;
+  box-shadow: 3px 3px 3px 1px rgba(0, 0, 0, .25);
+  resize: none;
+  height: 6em;
+}
+
+textarea::placeholder {
+  color: var(--grey-color);
+  opacity: 1
+}
 
 input {
   font-weight: 300;
