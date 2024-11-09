@@ -14,7 +14,9 @@ import {
 import { 
   getFirestore,
   collection,
-  addDoc
+  addDoc,
+  serverTimestamp,
+  getDocs
  } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -58,6 +60,12 @@ const updateProfileButtonEl = document.getElementById("update-profile-btn")
 const textareaEl = document.getElementById("post-input")
 const postButtonEl = document.getElementById("post-button")
 
+const moodEmojiEls = document.getElementsByClassName("mood-emoji-btn")
+
+const fetchPostsButtonEl = document.getElementById("fetch-posts-btn")
+
+const postsEl = document.getElementById("posts")
+
 /* == UI - Event Listeners == */
 
 signInWithGoogleButtonEl.addEventListener("click", authSignInWithGoogle)
@@ -70,6 +78,16 @@ signOutButtonEl.addEventListener("click", authSignOut)
 updateProfileButtonEl.addEventListener("click", authUpdateProfile)
 
 postButtonEl.addEventListener("click", postButtonPressed)
+
+for (let moodEmojiEl of moodEmojiEls) {
+  moodEmojiEl.addEventListener("click", selectMood)
+}
+
+fetchPostsButtonEl.addEventListener("click", fetchOnceAndRenderPostsFromDB)
+
+/* === State === */
+
+let moodState = 0
 
 /* === Main Code === */
 
@@ -177,41 +195,63 @@ async function authUpdateProfile() {
   }
 }
 
-async function addPostToDB(postBody) {
+async function addPostToDB(postBody, user) {
   try {
     const docRef = await addDoc(collection(db, "posts"), {
-      body: postBody
+      body: postBody,
+      uid: user.uid,
+      createdAt: serverTimestamp(),
+      mood: moodState
+      // Challenge: Add a field called 'uid' where you save the user uid as a string
     })
     console.log('docRef.id: ', docRef.id)
   } catch (error) {
-    console.error("Error adding document: ", error)
-    
+    const errorCode = error.code
+    const errorMessage = error.message
+    console.error(errorCode, errorMessage)
   }
-      /*  Challenge:
-		Import collection and addDoc from 'firebase/firestore'
+}
 
-    Use the code from the documentaion to make this function work.
+function displayDate(firebaseDate) {
+  const date = firebaseDate.toDate()
+
+  const day = date.getDate()
+  const year = date.getYear()
+
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+  const month = monthNames[date.getMonth()]
+
+  let hours = date.getHours()
+  let minutes = date.getMinutes()
+  hours = hours < 10 ? "0" + hours : hours
+  minutes = minutes < 10 ? "0" + minutes : minutes
+  return `${day} ${month} ${year} - ${hours}:${minutes}`
+}
+
+async function fetchOnceAndRenderPostsFromDB() {
+      /*  Challenge:
+		Import collection and getDocs from 'firebase/firestore'
+
+        Use the code from the documentaion to make this function work.
         
-    The function should add a new document to the "posts" collection in Firestore.
-        
-        The document should contain a field called 'body' of type "string" with a value of
-        postBody (from function parameter)
-        
-        If the document was written successfully, then console log
-        "Document written with ID: {documentID}"
-        Where documentID is the actual ID of the newly created document.
-        
-        If something went wrong, then you should log the error message using console.error
+        This function should fetch all posts from the 'posts' collection from firestore and then console log each post in this way:
+        "{Document ID}: {Post Body}"
     */
+  const querySnapshot = await getDocs(collection(db, "posts"))
+  querySnapshot.forEach((doc) => {
+    console.log(doc.id, " => ", doc.data().body)
+  })
 }
 
 /* == Functions - UI Functions == */
 
 function postButtonPressed() {
   const postBody = textareaEl.value
-  if(postBody) {
-    addPostToDB(postBody)
+  const user = auth.currentUser
+  if(postBody && moodState) {
+    addPostToDB(postBody, user)
     clearInputField(textareaEl)
+    resetAllMoodElements(moodEmojiEls)
   }
 }
 
@@ -266,4 +306,37 @@ function showUserGreeting(element, user) {
     }
   }
   element.textContent = `Hey ${firstName}, how are you?`
+}
+
+/* === Funcitons UI Functions - Mood === */
+
+function selectMood(event) {
+  event.preventDefault()
+  const selectedMoodEmojiElementId = event.currentTarget.id
+  changeMoodStyleAfterSelection(selectedMoodEmojiElementId, moodEmojiEls)
+  const chosenMoodValue = returnMoodValueFromElementId(selectedMoodEmojiElementId)
+  moodState = chosenMoodValue
+}
+
+function changeMoodStyleAfterSelection(selectedMoodElementId, allMoodElements) {
+  for (let moodEmojiEl of allMoodElements) {
+    if(selectedMoodElementId === moodEmojiEl.id) {
+      moodEmojiEl.classList.remove("unselected-emoji")
+      moodEmojiEl.classList.add("selected-emoji")
+    } else {
+      moodEmojiEl.classList.add("unselected-emoji")
+      moodEmojiEl.classList.remove("selected-emoji")
+    }
+  }
+}
+function resetAllMoodElements(allMoodElements) {
+  for (let moodEmojiEl of allMoodElements) {
+      moodEmojiEl.classList.remove("unselected-emoji")
+      moodEmojiEl.classList.remove("selected-emoji")
+  }
+  moodState = 0
+}
+
+function returnMoodValueFromElementId(elementId) {
+  return Number(elementId.slice(5))
 }

@@ -6,7 +6,7 @@
   --post-color: #62EEA8;
   --delete-color: #FF9F9F;
   --light-color: #FFFEFC;
-  --grey-color: #747E79;
+  --grey-color: #747E79; 
   --dark-color: #000000;
 
   --primary-font: 'Cabin', sans-serif;
@@ -39,11 +39,11 @@ body {
 
 /* === Typography === */
 
-h1, h2 {
+h1, h2, h3, p {
   margin: 0;
 }
 
-h2 {
+h2, h3 {
   font-weight: 500;
 }
 
@@ -87,6 +87,78 @@ section {
   display: flex;
   flex-direction: column;
   gap: 1em;
+}
+
+/* === Post Section - Mood Emojis == */
+
+.mood-emojis {
+  display: flex;
+}
+
+.mood-emoji-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: .8em;
+  gap: .3em;
+  background-color: transparent;
+  border: 0;
+}
+
+.mood-emoji-btn:hover {
+  transform: scale(1.2);
+}
+
+.mood-emoji-btn img {
+  width: 3.1em;
+  height: 3.1em;
+}
+
+.selected-emoji {
+  transform: scale(1.2);
+  opacity: 1;
+}
+
+.unselected-emoji {
+  transform: scale(1);
+  opacity: .5;
+}
+
+/* === Posts Section === */
+.post-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  margin-bottom: 1.8em;
+}
+
+.post {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--secondary-color);
+  padding: .8em;
+  border-radius: var(--element-border-radius);
+  gap: .4em;
+}
+
+.post .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.post .header h3 {
+  font-size: 1em;
+}
+
+.post .header img {
+  width: 2em;
+  height: 2em;
+}
+
+.post p {
+  font-size: .9em;
+  line-height: 1.3em;
 }
 
 /* === Nav === */
