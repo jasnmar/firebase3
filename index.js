@@ -16,7 +16,11 @@ import {
   collection,
   addDoc,
   serverTimestamp,
-  getDocs
+  onSnapshot,
+  QuerySnapshot,
+  query,
+  where,
+  orderBy
  } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -60,9 +64,10 @@ const updateProfileButtonEl = document.getElementById("update-profile-btn")
 const textareaEl = document.getElementById("post-input")
 const postButtonEl = document.getElementById("post-button")
 
-const moodEmojiEls = document.getElementsByClassName("mood-emoji-btn")
+const allFilterButtonEl = document.getElementById("all-filter-btn")
+const filterButtonEls = document.getElementsByClassName("filter-btn")
 
-const fetchPostsButtonEl = document.getElementById("fetch-posts-btn")
+const moodEmojiEls = document.getElementsByClassName("mood-emoji-btn")
 
 const postsEl = document.getElementById("posts")
 
@@ -83,11 +88,18 @@ for (let moodEmojiEl of moodEmojiEls) {
   moodEmojiEl.addEventListener("click", selectMood)
 }
 
-fetchPostsButtonEl.addEventListener("click", fetchOnceAndRenderPostsFromDB)
+for (let filterButtonEl of filterButtonEls) {
+  filterButtonEl.addEventListener("click", selectFilter)
+  
+}
 
 /* === State === */
 
 let moodState = 0
+
+/* === Global Constants === */
+
+const collectionName = "posts"
 
 /* === Main Code === */
 
@@ -96,6 +108,8 @@ onAuthStateChanged(auth, (user) => {
     showLoggedInView()
     showProfilePicture(userProfilePictureEl, user)
     showUserGreeting(userGreetingEl, user)
+    updateFilterButtonStyle(allFilterButtonEl)
+    fetchAllPosts(user)
     const uid = user.uid
   } else {
     showLoggedOutView()
@@ -197,12 +211,11 @@ async function authUpdateProfile() {
 
 async function addPostToDB(postBody, user) {
   try {
-    const docRef = await addDoc(collection(db, "posts"), {
+    const docRef = await addDoc(collection(db, collectionName), {
       body: postBody,
       uid: user.uid,
       createdAt: serverTimestamp(),
       mood: moodState
-      // Challenge: Add a field called 'uid' where you save the user uid as a string
     })
     console.log('docRef.id: ', docRef.id)
   } catch (error) {
@@ -213,10 +226,13 @@ async function addPostToDB(postBody, user) {
 }
 
 function displayDate(firebaseDate) {
+  if(!firebaseDate) {
+    return "Date not available"
+  }
   const date = firebaseDate.toDate()
 
   const day = date.getDate()
-  const year = date.getYear()
+  const year = date.getFullYear()
 
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
   const month = monthNames[date.getMonth()]
@@ -228,22 +244,109 @@ function displayDate(firebaseDate) {
   return `${day} ${month} ${year} - ${hours}:${minutes}`
 }
 
-async function fetchOnceAndRenderPostsFromDB() {
-      /*  Challenge:
-		Import collection and getDocs from 'firebase/firestore'
+function fetchInRealtimeAndRenderPostsFromDB(query, user) {
 
-        Use the code from the documentaion to make this function work.
-        
-        This function should fetch all posts from the 'posts' collection from firestore and then console log each post in this way:
-        "{Document ID}: {Post Body}"
-    */
-  const querySnapshot = await getDocs(collection(db, "posts"))
-  querySnapshot.forEach((doc) => {
-    console.log(doc.id, " => ", doc.data().body)
+  onSnapshot(query, (querySnapshot) => {
+    clearAll(postsEl)
+    querySnapshot.forEach(post => {
+      renderPost(postsEl, post.data())
+    });
   })
 }
 
+function fetchAllPosts(user) {
+  
+  const postsRef = collection(db, collectionName)
+
+  const q = query(postsRef,
+    where('uid', '==', user.uid),
+    orderBy('createdAt', 'desc')
+  )
+  fetchInRealtimeAndRenderPostsFromDB(q, user)
+}
+
+
+function fetchMonthPosts(user) {
+  const startOfMonth = new Date()
+  startOfMonth.setHours(0,0,0,0)
+  startOfMonth.setDate(1)
+
+  const endOfDay = new Date()
+  endOfDay.setHours(23, 59, 59, 999)
+
+  const postsRef = collection(db, collectionName)
+
+  const q = query(postsRef,
+    where('uid', '==', user.uid),
+    where('createdAt', '>=', startOfMonth),
+    where('createdAt', '<=', endOfDay),
+    orderBy('createdAt', 'desc')
+  )
+  fetchInRealtimeAndRenderPostsFromDB(q, user)
+}
+
+function fetchWeekPosts(user) {
+  const startOfWeek = new Date()
+  startOfWeek.setHours(0,0,0,0)
+
+  if(startOfWeek.getDay() === 0) {
+    startOfWeek.setDate(startOfWeek.getDate() - 6)
+  } else {
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay() + 1 )
+  }
+  const endOfDay = new Date()
+  endOfDay.setHours(23, 59, 59, 999)
+
+  const postsRef = collection(db, collectionName)
+
+  const q = query(postsRef,
+    where('uid', '==', user.uid),
+    where('createdAt', '>=', startOfWeek),
+    where('createdAt', '<=', endOfDay),
+    orderBy('createdAt', 'desc')
+  )
+  fetchInRealtimeAndRenderPostsFromDB(q, user)
+}
+
+
+function fetchTodayPosts(user) {
+  const startOfDay = new Date()
+  startOfDay.setHours(0, 0, 0, 0)
+  const endOfDay = new Date()
+  endOfDay.setHours(23, 59, 59, 999)
+
+  const postsRef = collection(db, collectionName)
+  const q = query(postsRef, 
+    where('uid', "==", user.uid),
+    where('createdAt', ">=", startOfDay),
+    where("createdAt", "<=", endOfDay),
+    orderBy("createdAt", "desc")
+  )
+  fetchInRealtimeAndRenderPostsFromDB(q, user)
+}
+
 /* == Functions - UI Functions == */
+
+function renderPost(postsEl, postData) {
+   const dispDate = displayDate(postData.createdAt)
+   const dispMood = postData.mood
+   const dispBody = postData.body
+    postsEl.innerHTML += `
+    <div class="post">
+      <div class="header">
+        <h3>${dispDate}</h3>
+        <img src="assets/emojis/${dispMood}.png">
+      </div>
+      <p>${replaceNewlinesWithBrTags(dispBody)}</p>
+    </div>
+    `
+}
+
+function replaceNewlinesWithBrTags(inputString) {
+  // Challenge: Use the replace method on inputString to replace newlines with break tags and return the result
+  
+  return inputString.replace(/\n/g, "<br>")
+}
 
 function postButtonPressed() {
   const postBody = textareaEl.value
@@ -255,7 +358,9 @@ function postButtonPressed() {
   }
 }
 
-
+function clearAll(element) {
+  element.innerHTML = ""
+}
 function showLoggedOutView() {
   hideView(viewLoggedIn)
   showView(viewLoggedOut)
@@ -308,7 +413,7 @@ function showUserGreeting(element, user) {
   element.textContent = `Hey ${firstName}, how are you?`
 }
 
-/* === Funcitons UI Functions - Mood === */
+/* == Funcitons UI Functions - Mood == */
 
 function selectMood(event) {
   event.preventDefault()
@@ -339,4 +444,39 @@ function resetAllMoodElements(allMoodElements) {
 
 function returnMoodValueFromElementId(elementId) {
   return Number(elementId.slice(5))
+}
+
+/* == Functions - UI Funcitons - Date Filters == */
+
+function resetAllFilterButtons(allFilterButtons) {
+  for (let filterButtonEl of allFilterButtons) {
+    filterButtonEl.classList.remove("selected-filter")
+  }
+}
+
+function updateFilterButtonStyle(element) {
+  element.classList.add("selected-filter")
+}
+
+function fetchPostsFromPeriod(period, user) {
+  if (period === 'today') {
+    fetchTodayPosts(user)
+  } else if (period === "week") {
+    fetchWeekPosts(user)
+  } else if (period === "month") {
+    fetchMonthPosts(user)
+  } else {
+    fetchAllPosts(user)
+  }
+}
+
+function selectFilter(event) {
+  const user = auth.currentUser
+  const selectedFilterElementId = event.target.id
+  const selectedFilterPeriod = selectedFilterElementId.split("-")[0]
+  const selectedFilterElement = document.getElementById(selectedFilterElementId)
+
+  resetAllFilterButtons(filterButtonEls)
+  updateFilterButtonStyle(selectedFilterElement)
+  fetchPostsFromPeriod(selectedFilterPeriod, user)
 }
